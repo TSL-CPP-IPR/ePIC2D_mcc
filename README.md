@@ -1,6 +1,6 @@
 # Electrostatic 2D-3V Particle-in-Cell (PIC) Code
 
-This repository contains an electrostatic 2D-3V Particle-in-Cell (PIC) code. The code is in development stage and README incomplete.
+This repository contains an electrostatic 2D-3V Particle-in-Cell (PIC) code. The code is in development stage and README is incomplete.
 
 
 
