@@ -199,29 +199,116 @@ emitter_0.species_idx2 = 1
 | `excitation` | Enable excitation collisions |
 | `ionization` | Enable ionization |
 | `GAS_DENSITY` | Neutral gas density (e.g., `1e20`) |
-| `collgroup ` | particle collision group in a pair of two |
+| `collgroup ` | particle collision group in a pair of two|
+
+|`Collgroup defines pairs of species(for reference see [species] section below)for collision interactions using two-digit codes. For example, collgroup = 01, 21 means: first  Species with index 0 (as in coding index start from 0,1,2 etc) (e.g., electrons) will collide with the neutral gas having properties of 2nd  Species with index 1 (e.g., argon ion)and 3rd Species ( index 2) will similarly interact with the neutral gas defined by 2nd Species (index 1). This simplifies modeling by treating the gas as a fluid using the physical properties of an existing species (typically ions). To explicitly define neutral atoms (e.g., neutral argon), you can add a separate species in the [species] section with zero normalized density and dummy values for other parameters, ensuring it does not participate in the simulation as particles. Note: Neutrals are not simulated as particles but only act as background gas for MCC purposes.`|
+
+## `[Sepcies]`
+
+| Parameter               | Description                                                       |
+| ----------------------- | ----------------------------------------------------------------- |
+| `count`                 | Total number of species to define                                 |
+| `species_X.name`        | Name of the species (e.g., `electron`, `ion`)                     |
+| `species_X.mass`        | Mass of the species in kg                                         |
+| `species_X.num`         | Number of particles for the species                               |
+| `species_X.temp`        | Initial temperature in eV                                         |
+| `species_X.charge_sign` | Charge sign (`-1` for electrons, `+1` for ions, `0` for neutrals) |
+| `species_X.normden`     | Normalized density (with respect to electron density)             |
+| `species_X.vs`          | Streaming velocity (normalized)                                   |
+| `species_X.loadtype`    | Particle distribution type: `uniform` or other supported types    |
+
+|`X is the species index starting from 0. The first two species must be electron and ion respectively. Additional species (e.g., beams or negative ions) follow. Neutrals are specified with charge_sign = 0 and normden = 0 and are used only for background collisions.`|
+# `Example`
 ```
-collgroup = 12,21 means that first species will collide with a gas which is neutral form of 2nd species (whichis generallu an ion)
-and third species will collide with same gas which is neutral form of 2nd species 
+[Species]
+#number of species
+count = 5
+
+species_0.name = electron
+species_0.mass = 9.10938215E-31
+species_0.num = 20000
+species_0.temp = 1
+species_0.charge_sign = -1
+species_0.normden = 1
+species_0.vs = 10
+species_0.loadtype = uniform
+
+species_1.name = ion
+species_1.mass = 1.661E-27
+species_1.num = 20000
+species_1.temp = 0.0
+species_1.charge_sign = 1
+species_1.normden = 0
+species_1.vs = 0
+species_1.loadtype = uniform
+
+species_2.name = negion
+species_2.mass = 1.661E-27
+species_2.num = 20000
+species_2.temp = 0.026
+species_2.charge_sign = -1
+species_2.normden = 0.5
+species_2.vs = 0
+species_2.loadtype = uniform
+
+species_3.name = beam
+species_3.mass = 1.661E-27
+species_3.num = 20000
+species_3.temp = 0.026
+species_3.charge_sign = -1
+species_3.normden = 0.4
+species_3.vs = 10
+species_3.loadtype = uniform
+
+species_4.name = neutralgas
+species_4.mass = 3.347E-27
+species_4.num = 10
+species_4.temp = 0.000
+species_4.charge_sign = 0
+species_4.normden = 0
+species_4.vs = 0
+species_4.loadtype = uniform
 ```
+## `Normalized density :`
+`ion density , n_i0 = plasma density, so for two component electron-ion plasma n_e0 = n_i0 => 1 = n_i0/n_e0 => normalized electron density is 1 by default and normalized ion density (wrt electron) set to zero as ion density is set equal to plasma density and  so it remains fixed and doesnot change with respect to electon density. For example if our system is multicomponent and consist of 5 species as below`
+```
+  electron, 9.10938215E-31, 50000, 1, -1, 1, -10, uniform
+  ion,6.63352090e-26,50000,0,1,0,0,uniform
+  species_a,9.10938215E-31, 50000,1,-1,0.1,0,uniform
+  species_b,9.10938215E-31,50000,1,1,0.3,0,uniform
+  species_c,9.10938215E-31, 50000,1,-1,0.4,0,uniform
+```
+`now normalized density equation become` 
+```
+n_a + n_c + n_e0 = n_i0 + n_b
+```
+```
+n_a/n_e0 + n_c/n_e0 + n_e0/n_e0 = n_i0/n_e0 + n_b/n_e0
+```
+`Let n_a/_ne0 = a , n_b/n_e0 = b and n_c/n_e0 = c then n_e0 = n_i0/(1 + a - b + c) this equation can be rewritten as`
+```
+n_e0 = n_i0/(1 - charge_sign_a * a - charge_sign_b * b - charge_sign_c * c) 
+```
+`with normalized density values : a = 0.1, b= 0.3 and c = 0.4 by taking charge sign as : species_a: -1, species_b: +1, species_c: -1. As mentioned above by default normalized electron and ion density are set to 1 and 0 respectively.
+Above equation can be written like this for any number of species with different charges`
 
-## `[species]`
+```
+double k = 0;
+for(int i = 0; i < species_no; i++)
+{
+    k += (-charge_signs[i]) * frac_densities[i];
+}
 
-Each line represents a species and its properties in the following format:
+// display::print(k);
 
-  ```
-  name, mass, number_of_particles, temperature, charge_sign, normalized density (w.r.t electron density), streaming_velocity along x direction, streaming_velocity along y direction, load_type
-  ```
-  
-Example species configuration:
-  
-  ```
-  electron, 9.10938215E-31, 50000, 1, -1, 1, -10,0, uniform
-  ion, 6.63352090e-26, 50000, 0, 1, 0, 0, 0,uniform
-  beam, 9.10938215E-31, 50000, 1, -1, 1, 10,0, uniform
-  ```
-(Note : Electron should be in the first line and Ion should be in the 2nd line and all other species will go after that.)
+normden[1] = den; // ion density
+normden[0] = den / k; // electron density
 
+for(int i = 2; i < species_no; i++)
+{
+    normden[i] = frac_densities[i] * normden[0];
+}
+```
 
  # Data processing and visualization
  1. Plot kinetic enegy ,potential enegy and total enegy
