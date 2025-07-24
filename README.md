@@ -21,7 +21,7 @@ This repository contains an electrostatic 2D-3V Particle-in-Cell (PIC) code. The
 ### Installation
 1. Clone the repository:
     ```bash
-    git clone https://github.com/koushik9988/ePIC2D_mcc.git
+    git clone https://github.com/TSL-CPP-IPR/ePIC2D_mcc
     ```
 
 2. Navigate to the directory:
